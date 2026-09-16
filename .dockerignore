@@ -1,0 +1,14 @@
+node_modules
+.git
+.env
+.env.local
+.env.production
+n8n_data
+postgres_data
+*.log
+logs
+.DS_Store
+Thumbs.db
+.vscode
+.idea
+docker-compose.override.yml
