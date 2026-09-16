@@ -1,0 +1,176 @@
+{
+  "name": "Backlink Monitor - Weekly",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * 1"
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Monday 9 AM Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "domain",
+              "value": "shiv-parmar-portfolio.netlify.app"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-domain",
+      "name": "Set Domain",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://ahrefs.com/v4/api/fallback?mode=backlinks&target={{ $json.domain }}&output=json",
+        "options": {}
+      },
+      "id": "http-request",
+      "name": "Ahrefs API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = [];\nconst items = $input.all();\n\nfor (const item of items) {\n  const data = item.json;\n  if (data.backlinks) {\n    for (const backlink of data.backlinks) {\n      results.push({\n        json: {\n          source_url: backlink.url_from,\n          target_url: backlink.url_to,\n          anchor: backlink.anchor,\n          domain_rating: backlink.domain_rating,\n          first_seen: backlink.first_seen,\n          last_seen: backlink.last_seen,\n          type: backlink.type,\n          date_checked: new Date().toISOString().split('T')[0]\n        }\n      });\n    }\n  }\n}\n\nreturn results;"
+      },
+      "id": "code-node",
+      "name": "Parse Backlinks",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 300]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "your-google-sheet-id",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Backlinks",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData"
+        },
+        "options": {}
+      },
+      "id": "google-sheets",
+      "name": "Save to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [1100, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "your-email@gmail.com",
+        "subject": "Weekly Backlink Report - {{ $now.format('yyyy-MM-dd') }}",
+        "message": "=<h2>Weekly Backlink Report</h2><p>Total backlinks found: {{ $input.all().length }}</p><p>Check your Google Sheet for detailed report.</p>"
+      },
+      "id": "send-email",
+      "name": "Send Email Report",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1320, 300],
+      "credentials": {
+        "smtp": {
+          "id": "smtp",
+          "name": "SMTP"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Monday 9 AM Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Domain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Domain": {
+      "main": [
+        [
+          {
+            "node": "Ahrefs API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ahrefs API": {
+      "main": [
+        [
+          {
+            "node": "Parse Backlinks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Backlinks": {
+      "main": [
+        [
+          {
+            "node": "Save to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Send Email Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "SEO Automation"
+    }
+  ]
+}
