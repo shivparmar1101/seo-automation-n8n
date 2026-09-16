@@ -1,15 +1,9 @@
-FROM n8nio/n8n:1.68.0
+FROM docker.n8n.io/n8nio/n8n:1.68.0
 
-# Set environment variables
-ENV N8N_HOST=0.0.0.0
-ENV N8N_PORT=5678
-ENV N8N_PROTOCOL=http
-ENV NODE_ENV=production
-ENV GENERIC_TIMEZONE=Asia/Kolkata
-ENV TZ=Asia/Kolkata
+WORKDIR /home/node
 
-# Expose port
+USER node
+
 EXPOSE 5678
 
-# Start n8n
 CMD ["n8n", "start"]
